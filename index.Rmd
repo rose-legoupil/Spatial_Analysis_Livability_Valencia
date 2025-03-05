@@ -1,29 +1,254 @@
 ---
 title: "Spatial Analysis Livability Valencia"
 author: "Rose Legoupil"
-output: html_document
+output: 
+  html_document: 
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## **Introduction and Background Information** {#introduction-and-background-information}
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+1. ### **Research Question and Introduction** {#research-question-and-introduction}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+**What is the relationship between socioeconomic indicators of livability and environmental quality in different areas of Valencia, Spain?**
 
-```{r cars}
-summary(cars)
-```
+#### **Aim of Investigation** {#aim-of-investigation}
 
-## Including Plots
+Urban livability is defined as the wellbeing and quality of life of inhabitants in a given urban area according to both social and economic indicators *(Martino, N., Girling, C. and Lu, Y., 2021).* It can be measured by looking at 4 main indicators which include accessibility, social diversity, affordability, and economic vitality. This concept is specifically relevant for urban planning policies focusing on facilitating access to diversity while remaining affordable in urban environments. For example, Valencia has implemented several urban planning policies, specifically focusing on the importance of green spaces to improve the city's livability like the Green Infrastructure Plan of Valencia *(Plaverd Valencia, 2024).* This investigation is therefore significant to understand how the level of urban livability changes depending on the environmental quality and varying levels of green space. This will help confirm and understand the significance of urban planning policies for green space in Valencia.      
 
-You can also embed plots, for example:
+#### **Geographical Context**  {#geographical-context}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+As shown by Fig.1, Spain is located in southwestern Europe, sharing a border with France and Portugal. Fig.2 shows how Spain is divided into 17 autonomous communities (regions), one of them being Valencia located on the eastern coast of the country *(Britannica, 2019\)*. This investigation focuses on the city of Valencia, part of the region of Valencia, which is an urban area composed of 19 districts. Valencia is an interesting location to carry out an investigation on urban environment given it is the 3th largest city of Spain with a population of 814 208 residents in 2024 *(World population review, 2024\)*. 
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+2. ### **Background Information** {#background-information}
+
+Urban livability has a complex and multi-dimensional nature, making urban livability difficult to define and measure. We can therefore look at 4 different indicators to better understand the concept of livability.   
+
+#### **Accessibility** {#accessibility}
+
+Accessibility can be defined in two different ways. It is either the relative accessibility between two points, measured by the time taken to reach key destinations, or total accessibility at a point, measured by the proximity of that point to necessary services *(Ingram, D.R., 1971\)*, *(Gaglione, F., Gargiulo, C., Zucaro, F. and Cottrill, C., 2022).* Otherwise, accessibility can also be measured by looking at public transport frequency or pedestrian and cyclist counts *(Martino, N., Girling, C. and Lu, Y., 2021).* 
+
+Accessibility will increase livability as it will increase life satisfaction of city dwellers, specifically the travel satisfaction when reaching their daily destinations outside their residential areas *(Zhan, D., Kwan, M.-P., Zhang, W., Fan, J., Yu, J. and Dang, Y., 2018\)*. In addition, studies have shown that people in car-dependent neighborhoods often have a lower quality of life owing to higher levels of pollution and congestion *(Frank, L.d, 2009\)*. Hence, areas with active transportation infrastructure like sidewalks or bike lanes or with higher level of connectivity through public transport, will be prone to higher levels of accessibility and quality of life and satisfaction, increasing urban livability.      
+
+#### **Social Diversity**  {#social-diversity}
+
+Social diversity is defined as the variety of people in an area, including differences in income levels, ethnicities, or age group *(Talen, E. and Lee, S., 2018\)*. Social Diversity contributes to urban livability as it enhances economic vitality by promoting creativity among individuals and businesses. Exposure to diverse backgrounds, experiences, and perspectives will stimulate innovation and boost the overall creative and innovative capacity of human capital *(Moroni, S., 2016\)*. 
+
+#### **Affordability**   {#affordability}
+
+Affordability is defined as whether or not the residential land in a given area is financially affordable for a majority of citizens. It specifically looks at housing cost as a proportion of an individual's disposable income (OECD, 2022). Another aspect of affordability is looking at the cost of life for city dwellers. The more affordable amenities are, such as hospitals, schools, or public transit systems the greater the access to infrastructures related to health, education, or modern transportation which help ensure a greater quality of life among the urbanites *(Abdul Shakur, E.S., Mohamed, A.F. and Abdul Hadi, A.S., 2017\)*.    
+
+#### **Economic Vitality**    {#economic-vitality}
+
+Economic vitality is the overall health and strength of a community’s economy. It can be achieved through prosperous local businesses, job opportunities, and access to essential services that allow residents to live comfortably and achieve economic and social well being. 
+
+#### **Environmental Quality**    {#environmental-quality}
+
+Environmental Quality is a relative concept, based on comparison to given criterion, which can vary over time. Because of its multidimensional nature, environmental quality can be measured considering both quantitative and qualitative dimensions *(Lawrence, R.J, 2014\)*. An environmental quality survey can be conducted by an observer to assess environmental quality of the urban environment against a range of indicators. Each indicator is graded on a scale of quality, usually from 1 to 5, to represent less good to good *(Field Studies Council, 2023\)*.
+
+3. ### **Hypothesis** {#hypothesis}
+
+**Hypothesis 1- With higher income brackets, indicators of livability generally increase, except for affordability and potentially diversity.**
+
+Accessibility would hypothetically increase with income as urban areas in higher income brackets tend to have better infrastructure, public transport, and walkability. This idea can be supported by the Monocentric City Model which assumes that an urban area is designed around one main center known as the central business district (CBD) and spread outward in layers of various land use *(Abozeid, A.S.M. and AboElatta, T.A., 2021\)*. The CBD is the commercial and economic core of a city and is therefore characterized by office buildings and retail stores. Hence, accessibility is both a cause and consequence of the Monocentric City Model. Cities historically developed around a single core due to accessibility advantages. Over time, transportation systems like major roads and public transport rail networks were constructed into a radial and monocentric system that converged toward the center *(The Geography of Transport Systems, 2017\)*. Hence, in many cases today, the CBD acts as the main transport hub of an urban area and accessibility naturally declines with distance from the CBD. This is also reinforced by the fact that commercial and retail land use in the CBD attracts a large workforce, necessitating efficient transport links to accommodate daily commutes. This theory can be applied to Valencia which shows characteristics of a Monocentric City with commercial and administrative land use concentrated in the center in districts like Ciutat Vella and L’Eixample. However, Ciudad de las Artes y las Ciencias located in Quatre Carreres is also an important economic and cultural area of the city which demonstrates the polycentric tendencies of Valencia and this could cause some variation in the data collected for accessibility. 
+
+Social Diversity could potentially increase or decrease with income bracket. One of the factors that could influence the social diversity in different districts of Valencia is the level of gentrification. Gentrification is the process of reinvesting money into deprived inner-city areas to make neighbourhoods more attractive, leading to the displacement of lower income residents out of those neighbourhoods because of the influx of wealthier residents *(Hammel, D.J., 2009\)*. On one hand, gentrification can increase social and ethnic diversity as it attracts immigration which is associated with the arrival of new residents with racial and ethnic diversity. Additionally, for cities which have historically experienced high levels of immigration, the diverse populations already integrated which makes gentrification less disruptive and more likely to maintain diversity *(Hwang, J., 2015\)*. On the other hand, gentrification can also hinder social diversity in gentrified areas where rising property values and living costs force original lower-income residents to be displaced. Hence, there will be low levels of ethnic diversity in the gentrified area while peripheral districts will experience an inflow of ethnically diverse immigrants which can increase social diversity *(Richardson, J., Mitchell, B. and Franco, J., 2019).*
+
+Economic vitality will likely increase with income as higher-income areas tend to have more businesses, investment, and job opportunities. This can be explained by the multiplier effect which is as a growth pole theory that rely on the idea that a change (increase or decrease) of one type of economic activity in a given area leads to a change in demand for goods and services, triggering the development of other types of economic activity in the same area *(Domański, B. and Gwosdz, K., 2010\)*. In the case of income, areas with higher levels of income means residents have more disposable income which in turn increases demand for goods and services. This creates a demand-driven multiplier effect where the rise in consumption stimulates local businesses. This creates a ripple effect of increasing consumer and businesses confidence, encouraging businesses to expand and hire more employees which overall enhance economic vitality.
+
+Affordability will likely decrease with higher income and this can be explained by the bid rent theory. This theory looks at how rent per area varies with distance from the CBD. The idea behind this theory is that as distance from the CBD increases the land available at lower price diminishes *(Narvaez, L., Penn, A. and Griffiths, S., 2013\)*. Hence, near the CBD, the land use will be for retailers and businesses which are willing to pay a higher cost to be in the centre where there is a higher concentration of population. However, the CBD therefore also attracts high income households that have the disposable income to pay for high land value and that want to be closer to the commercial and leisure hub that represents the CBD. But since the bid rent will be more expensive it will take up a proportionally greater amount of the household’s disposable income which leads to lower housing affordability. The opposite occurs in areas farther away from the CBD where the rent per area falls.   
+
+    
+**Hypothesis 2- Livability will increase when environmental quality is higher.**    
+Livability being a socio-economic concept, both the economic and social aspects need to be compared to the level of environmental quality. 
+
+The environmental Kuznets curve (EKC), shown in Fig.4, is a graphical representation of the relationship between environmental degradation and economic growth. The inverted U-curve indicates that environmental degradation first increases as an area experiences economic growth until a turning point where it eventually starts improving. This can be caused by technological improvement. Additionally, as income rises, the demand for environmental quality tends to increase as people are more willing to prioritize and invest in a cleaner environment (*Farzin, Y.H. and Bond, C.A., 2006*). Hence, we can assume that when livability rises, economic vitality with it, there will likely be an increase in environmental quality.   
+
+The concept of the sustainable urban development model also demonstrates the interconnectedness between environmental quality and livability. This model uses Egan Wheel to measure how sustainable a community is based on socio-economic and environmental indicators. One of the indicators focuses on environmental quality and shows how increasing green spaces, improving air and water quality, or promoting sustainable transportation will directly contribute to urban dwellers' health and overall quality of life now and for future generations. For example, clean air reduces the risk of respiratory illnesses or sustainable transportation like walking paths or bike lanes increase accessibility *(Gough, M.Z., 2015\)*.
+
+## **Method and Investigation** {#method-and-investigation}
+
+1. ### **Methodology**  {#methodology}
+
+To explore the relationship between socioeconomic indicators of livability and environmental quality, a stratified sampling strategy was used to ensure comprehensive coverage of Valencia’s 19 districts with varying socioeconomic profiles. In the context of a spatial analysis of Valencia, stratified sampling was used as it allows a balanced representation of the different districts and census sections of the urban area. In addition, the stratification consisted of dividing the census sections of Valencia (subunits within the different districts) into 3 groups of low, medium, high income brackets to ensure a selection of districts with varying socioeconomic characteristics. To generate this stratified map, secondary data on Average income indicators in the different census sections of Valencia was downloaded on the National Statistics Institute of Espana *(INE, 2015\)* and a shapefile of Valencia was downloaded from the Ajuntament de Valencia website *(Opendatasoft.com, 2024\)*. All data was then imported and transformed on the computer program RStudio to generate the map seen on *Fig.5*. Note that the District Pobles del Nord and Pobles del Sud have been excluded from the sampling because of their remoteness from Valenica’s CBD. Given the urban focus of this investigation, this exclusion would ensure that the analysis is centered on areas where urban socioeconomic dynamics are most relevant.  
+
+ 
+
+Then 3 districts from each income bracket were selected using random sampling. Random sampling was used as it reduces subjectivity in the selection of the districts to avoid bias and is an effective method of sampling for large populations like the city of Valencia *(Royal Geographical Society, 2023\)*. For each district both primary and secondary data was collected as indicators to measure livability and environmental quality around Valencia. For any primary data collection, 3 census sections within each district were randomly selected and the measurements were averaged to give representative data of the district as whole. 
+
+2. ### **Measuring Affordability**      {#measuring-affordability}
+
+The rent-to-income ratio is an effective way to measure housing affordability as it shows what percentage of a household’s income is used for rent. It is calculated using the following formula (it is usually calculated monthly but given the limited availability of the data it was calculated at an annual level of the year 2022 in the case of this investigation):
+
+Rent-to-Income Ratio \=average annual rentaverage annual income100
+
+If the rent-to-income ratio is below 30% housing is considered affordable but the affordability threshold indicates that above 30% is considered a rent burden and housing may be unaffordable for the average person *(www.rentspree.com)*. To measure the rent-to-income ratio two data sets were used: average income in euros in 2022 *(INE, 2015\)* and monthly rental prices per m2 in euros in 2022 *(Ine.es, 2025\)*. Then the total monthly rent was calculated by multiplying the per m2 rent by the average apartment size which is around 90m2  in Valencia *(INE)*. Comparing those two metrics, the rent-to-income ratio was then calculated shown in *Fig.6*. 
+
+According to *Fig.6*, we can observe that the districts in the highest income bracket (Ciutat Vella, l'Eixample, and El Pla del Real) are also the districts with the rent-to-income ratio is the lowest below the 30% affordability threshold. This indicates that those districts are the most affordable, specifically in L’eixample with the lowest ratio of 21.3%. All other districts are above the 30% ratio which indicates housing may be unaffordable for the average person, specifically in Rascanaya which reaches the highest ratio of 37.2%. Hence, the graph does not support the hypothesis that affordability decreases with income. However, this can be explained because high-income residents can afford higher rent, but rental prices are not proportionally high and so rent takes up a smaller percentage of their income. For instance, while Ciutat Vella has a relatively high average annual rent of €4860, it is offset by an even higher average annual income of €20593, making rent more manageable for its residents. Hence, even if the absolute cost of rent follows the expected trend, with higher-income districts having higher rental prices, affordability does not follow the same pattern. Instead, high-income districts have a greater level of  affordability because rent represents a smaller financial burden proportionally to income. Furthermore, other factors could affect the data like the provision of public housing. Since public housing is subsidized by public funds and provided to people on low incomes, it provides a rental option which is more affordable than the market rate. Hence, this can contribute to higher levels of housing affordability. Studied on the spatial distribution of public housing in Valencia indicates that the district with the highest number of public housing buildings is Ciutat Vella with 34 buildings *(Gallego-Valadés, A., Ródenas-Rigla, F. and Garcés-Ferrer, J., 2021\)*. This coincides with the finding that Ciutat Vella, despite having a higher average income, also exhibits a lower rent-to-income ratio compared to other districts. Furthermore, income elasticity of demand can be considered. Since demand for housing is more inelastic for higher-income households living in Ciutat Vella, L’Eixample, and El Pl del Real, they are less sensitive to changes in rent prices which contributes to the lower rent-to-income ratios observed in these districts.     
+ 
+
+3. ### **Measuring Social Diversity**       {#measuring-social-diversity}
+
+Two aspects of social diversity were measured inducing ethnic and income diversity. Hence, the inductors choosed where the Gini coefficient which is often used as a measure of income diversity *(Taylor, D)* and the percentage of the population with non-Spanish nationality. Both datasets were collected on the National Statistics Institute website *(INE, Population by gender and country of birth, 2021)(INE, Gini Index and Income Distribution, 2015\)*. The results are presented as a scatter graph on *fig.7* in order to display the relationship between the two indicators and identify districts that may have varying levels of social integration or segregation.  
+
+According to *Fig.7*, we can observe that there is no clear correlation between the percentage of non-spanish and Gini coefficients. Some districts like Patraix display low levels of both non-spanish and Gini coefficients down to 10.8% and 28.9% respectively. Other districts like Ciutat Vella show a diverging case where both indicators are the highest up to 20.7% of non-spanish residents and 38.2% for the Gini coefficient. For the rest of the districts, there is only little fluctuation in terms of the Gini coefficients which remains in a range of 4.1% but varying levels of non-spanish residents which are particularly high in districts from the lowest income bracket (Rascanya, Poblats Maritims, and Quatre Carres). For example the percentage of non-spanish residents goes up to 19.5% in Rascanya. The only anomaly is Camins al Grau which also has a relatively high level of non-spanish up to 16.7% while being from the middle income bracket group but this could be explained by the relatively high level of affordability (Camins al Grau being just under the 30% affordability threshold) which can attract a more diverse demographic. Overall, if we look at the districts from the higher income bracket (Ciutat Vella, l'Eixample, and El Pla del Real), we observe that the level of non-Spanish population varies in each case. This supports the hypothesis that within higher income brackets, whether social diversity increases or decreases does not follow a clear trend. This can be explained by historical migration patterns which have a significant impact on the level of social and ethnic diversity. For example, Ciutat Vella is one of the oldest areas of Valencia and acts as a historic center *(Pérez, R.M. and Pérez, R.M., 2017\)*. Hence, the area has attracted a diverse demographic of foreign workers and tourists from varying ethnic backgrounds *(Álvaro Mazorra Rodríguez, 2024).* Furthermore, in 1992, Valencia signed the Plan Integral de Rehabilitación de Valencia (Plan RIVA) to solve the issue of urban degradation. This consisted of constructing new facilities for social and educational purposes as well as public housing which successfully contributed to the rehabilitation of Ciutat Vella *(Aq.upm.es., 2025\)* and further stimulated the arrival of new residents and tourists. However, the gentrification that resulted from the project also caused elderly, low income immigrants, and other marginalized groups to be displaced to peripheral districts. Hence, this can explain why districts that are relatively far away from the city center like Rascanya, Quatre Carres, or Poblats Maritims have higher levels of non-spanish residents 19.5%, 16.0%, and 16.8% respectively. The main anomaly is Patraix which displays a low 10.8% of non-spanish residents while being relatively far from Ciutat Vella. This can be a result of Patraix neighborhoods being more residential and therefore attracting families and long-term residents which contributes to a stable but potentially less diverse population.
+
+The two metrics were then used to calculate a composite indicator of social diversity displayed in the sample calculation in *Fig.8*. Both indicators where normalized then the social diversity index for each district was calculated by adding both normalized indicators (equal weighting was used as it is assumed that both indicators have equal importance). 
+
+The results are displayed in *Fig.9* as a bar chart showing the level of social diversity by districts. Once again, we can observe that there is no particular trend between the social diversity index and income bracket as the three districts with the highest social diversity score all belong to different income brackets. For example, Ciutat Vella has the highest score of social diversity of 1.00 because of mixed incomes and the significant presence of foreign residents. To the other extreme Patraix has a score of 0.04 which indicates very low social diversity. 
+
+4. ### **Measuring Accessibility**        {#measuring-accessibility}
+
+To measure accessibility, the focus was around three main facilities encompassing schools (including public schools, charter schools, and private schools), hospitals, and public transport facilities as those are key indicators of urban connectivity and accessibility. All data was collected secondarily on the Ajuntament de Valencia website *(Educational Centers in Valencia, 2022)(Hospitales y otros centros sanitarios, 2024)(Public Transport Stations, 2022\)*. For a spatial representation of the data, the distribution of schools, hospitals, and transport stations are displayed on *Fig.10*. In terms of schools, we can observe that the two districts with the greatest number of schools are Poblats Maritims with 34 schools and Quatre Carres with 32 schools which are also the districts with the greatest total surface area of 9783km² and 11325km² respectively *(Pérez, R.M. and Pérez, R.M., 2017\)*. Inversely, the smallest district in surface area, Ciutat Vella which is 169km², is also the district with the lowest number of schools down to 15 schools. This same pattern follows for the number of hospitals and public transport facilities where Quatre Carres have up to 6 hospitals and 153 public transport stations while Ciutat Vella only has 1 hospital and 49 public transport stations. Hence, the general trend is that the greater the surface area the greater the number of facilities. However, this becomes less significant to measure accessibility as a higher number of facilities does not necessarily mean they are evenly distributed or easily reachable for all urban dwellers. Hence, for a more significant evaluation of accessibility, facilities per km² was also measured for a focus on spatial availability adjusted to surface area variation between districts.   
+
+Hence, *Fig.11* shows the number of facilities per km² in each district. We can observe that the two districts with the highest level of public transport station per km² are Ciutat Vella and L’Eixample with 0.29 stations/km² and 0.04 stations/km² respectively. On the other hand, Poblats Maritims and Quatre Carres have the lowest level of public transport down to 0.01 stations/km² for both districts. Hence, the general trend shows that districts from the higher income bracket (Ciutat Vella, l'Eixample, and El Pla del Real) also have a greater public transport station density and hence a greater level of accessibility and vice versa with districts from the lowest income bracket (Poblats Maritims, Quatre Carres, and Rascanya). This can be explained using the monocentric city model which demonstrates how land use and property values change relative to distance from the CBD. Hence, according to the model, Ciutat Vella which is the historic center of Valencia and L’Eixample which acts as the primary CBD will naturally have a greater public transport density as these areas have the highest demand for accessibility. This is because the concentration of businesses, services, and economic activity in the CBD creates a stronger incentive for investment in transport infrastructure which in turn increases accessibility *(Bentlage, M., Müller, C. and Thierstein, A., 2020\)*. Furthermore, the pattern is the same with school and hospital density which are the highest in Ciutat Vella with 0.089 schools/km² and 0.0059 hospital/km² while being the lowest in Quatre Carres down to 0.003 schools/km² and 0.0005 hospital/km². This is because, according to the central place theory, higher-order services like hospitals and schools (specially universities) are usually concentrated in large urban centers in districts like Ciutat Vella *(King, L., 2020\)*. Hence, with no notable anomalies, the data supports the first hypothesis that accessibility increases in the CBD where the higher income bracket districts are located. 
+
+5. ### **Measuring Economic Vitality**        {#measuring-economic-vitality}
+
+To measure economic vitality two matrices were used including average income per person and unemployment level. Both dataset was collected secondarily *(INE, Indicadores de renta media y mediana, 2015)(Informe situación socio-laboral de la ciudad de València Datos básicos del mundo del trabajo, 2021\)*. Both indicators were then normalized and combined to create a composite indicator of economic vitality. As shown by the sample calculation in *Fig.12*, the standardized unemployment rate was subtracted from 1 as this indicator contributes negatively to economic vitality. 
+
+The economic vitality scores were displayed for each district as a bar chart, shown in *Fig.13*, to facilitate easier comparison. We can observe that the data support the hypothesis that economic vitality increases with income as the three districts with the highest economic vitality score are also the districts from the highest income bracket. This includes El Pla del Real with a score of 1.00, and L’Eixample and Ciutat Vella with an equal score of 0.89. Conversely, Rascanya, Poblats Maritims, and Quatre Carreres are the districts from the lowest income bracket and have the lowest economic vitality score down to 0.15, 0.08, and 0.07 respectively. There is no notable anomaly, though we can note that the economic vitality score of Camins al Grau is relatively lower down to 0.28 despite having moderate income levels. This is because of the high unemployment rate of 8.1% in Camins al Grau which brings the economic vitality score downard. Overall, this trend can be explained by the multiplier effect in districts like Ciutat Vella and L’Eixample which experience high consumer and businesses confidence due to high income level and the commercial and economic hub that the CBD represents *(Valencia.es., 2017\)*. This further contributes to the low unemployment rate in both Ciutat Vella and L’Eixample which is only 2.6% and 3.6% respectively, boosting economic vitality.                
+ 
+
+6. ### **Measuring Environmental Quality**        {#measuring-environmental-quality}
+
+Different formats of environmental quality surveys exist, but in the case of this investigation 4 essential factors of environmental quality were assessed: cleanness, level of pollution, access to green space, and aesthetic appeal. For each factor, multiple indicators were graded on a scale of quality from 1 to 4\. To measure the environmental quality across Valencia, a total of 27 environmental quality surveys were conducted on the 11 of january 2025\. This includes 3 environmental quality surveys in 3 different census sections randomly selected within each district in order to have a more representative measure of environmental quality of the districts as a whole. The geographical location of each site where data was collected is shown on *Fig.14.* Since the investigation focuses on spatial comparison, no repeat was carried out when assessing environmental quality.   
+***Fig.14: Map showing geographical point of data collection in Valencia (shown by the red dots)*** 
+
+  
+
+The results of the environment survey are displayed as a radial line graph for each district shown by *Fig.15.* For each district, the indicator scores are averaged across the three survey locations which aim to reduce  variability from individual survey locations. Note that the scoring is consistent: a score of 1 indicates a low level of the given indicator (whether positive or negative), while a score of 4 indicates a high level. 
+
+A majority of the inductors were assessed visually except from air quality and noise pollution that were measured using digital tools shown in *Fig.16*. For air quality the level of carbon dioxide was recorded with a digital Co2 monitor and for noise pollution decibel level was recorded using a decibel meter app. In both cases, 5 repeats were taken each time and an average was calculated in order to have more reliable data and when Co2 or decibel was measured the recording tool was kept at the same distance from the floor each time. Finally, so that the data could be compared with the rest of the environmental survey, measurements were converted into a standardized scale using the following equation.     
+
+Scaled Value \= 1 \+ (X \- Xmin)  (4 \- 0)Xmax \- Xmin
+
+The results of the environmental quality surveys show the variations in environmental quality across the different districts of Valencia. Districts with the highest level of environmental quality overall is Ciutat Vella which scores a maximum score of 4 in three different indicators including air quality, pathway maintenance, and budding design. This is because Ciuata Vella is the historical centre of Valencia and is therefore characterised by historic architecture and pedestrianized areas. The only indicator that lowers the environmental quality of Ciutat Vella is noise pollution which is relatively high up to 2.4 and can be attributed to high foot traffic owing to commercial and cultural land use of the district which can attract a lot of tourists and residents. With the second highest environmental quality comes Quatre Carreres which has a high score of 3 for green space cover and 3.8 for pathway maintenance which can be explained because Quatre Carreres has the largest section of the Turia Gardens, the largest urban park in Spain *(Lovell, L., 2025\)*. However the district has a relatively high level of air pollution and graffiti with a score of 2.4 and 2.2 respectively which contributes to an overall lower level of environmental quality. Conversely, Rascanya has the lowest environmental quality with a score of 0.0 for presence of art but a relatively high score of 2.7 for graffiti. The only indicator that contributes to increasing the environmental quality in Rascanay is the relatively high score of 2.4 for green space cover. Overall, the trend we can observe is that central districts like Ciutat Vella and El Pla del Real tend to score higher in aesthetic appeal and access to green space aspects of environmental quality but struggle with issues of cleanness and of pollution. On the other hand, more peripheral districts like Rascanya and Poblats Maritims tend to have lower environmental quality because of higher levels of graffiti and a lack of cultural elements but also display high levels of green space. This trend can be explained because central areas generally receive more investment in urban aesthetics and pedestrian infrastructure because of tourism and economic activity. 
+
+## **Conclusion and Evaluation** {#conclusion-and-evaluation}
+
+1. ### **Conclusion**   {#conclusion}
+
+To conclude this investigation, a final graph encompassing all the variables explored was generated as a bubble chart shown on *Fig.17* which is useful to make compasion when a lot of inductors are used. Livability and environmental quality was calculated as a single inductor by normalizing their respective components and aggregating them into composite scores.        
+
+**Hypothesis 1- With higher income brackets, indicators of livability generally increase, except for affordability and potentially diversity.**  
+*Fig.17* shows that the districts with the highest income level, shown by the largest bubble size, are also the districts with the highest level of livability, particularly Ciutat Vella which has a livability score of 0.94. The trends follow for districts from lower income brackets which have the lowest livability score of 0.21 for both Quatre Carreres and Poblats Maritims. Overall, data support the hypothesis that with higher income comes a higher level of livability. The only anomaly is that higher income districts also show higher affordability.    
+
+**Hypothesis 2- Livability will increase when environmental quality is higher.**    
+*Fig.17* does not show a clear correlation  between livability and environmental quality. Since the positive relationship between the two variables is not demonstrated by the graph we can conclude that the hypothesis is not fully supported by the data. While some districts like Ciutata Vella do show that high livability of 0.94 is associated with high environmental quality of 1.00 other districts present an opposite relationship where high livability is associated with low environmental quality or vice versa. For example, L’Eixample which has a relatively high livability score of 0.67 also has a low environmental quality of 0.19. Conversely, Quatre Carreres has a relatively low livability score of 0.21 while having high environmental quality of 0.59.            
+
+2. ### **Evaluation**   {#evaluation}
+
+Some evaluation can be made on both primary and secondary data collection which would have increased the reliability, validity and accuracy of the investigation. 
+
+#### **Primary Data Evaluation**    {#primary-data-evaluation}
+
+All data for environmental quality data were collected during the 11 of january 2025, which was during the weekend. Hence, this could have created potential biases and reduced reliability in air quality and noise pollution data which are factors that fluctuate depending on daily human activities and traffic congestion. In Valencia, traffic volumes peak on Mondays and gradually decrease throughout the week *(Calafate, C.T., Soler, D., Cano, J.-C. and Manzoni, P., 2015\)*. Hence, weekends usually experience lower traffic volumes which can lower emissions and lead to better air quality and reduced noise pollution. In addition, data was collected throughout the day at different times of the day which could have also caused variation in air quality and noise pollution data. For example, metros in Valencia operate from 5:00 AM to 12:30 AM on weekends *(HousingAnywhere, 2023\)* which can result in higher activity levels in the morning and hence more noise pollution in the morning. Hence, to make the data more reliable and accurate more repeats could have been done for air quality and noise pollution measurement throughout the week and at more similar time of the day. Furthermore, the other main limitation of the environmental quality survey was the subjectivity associated with it. Since the measurement is based on visual assessment, it can easily induce bias. A solution could have been to repeat the environmental quality survey by a larger number of people which would potentially have varying results and then measure an average.       
+
+#### **Secondary Data Collection**    {#secondary-data-collection}
+
+For the secondary data collection, some limitations hinder the validity of the investigation. For example, when creating indicators of livability, sub-inductors were also used. A maximum of two sub-inductors was used in the case of measuring economic vitality (income and unemployment rate) and social diversity (gini coefficient and non-spinsi residentes). However, particularly in the case of affordability that only looked at housing affordability, using more sub-inductors would have increased the validity of the investigation. Finally, when measuring the composite indicators of livability, equal weight was assigned to each sub-inductors. This creates the assumption that all indicators contribute equally to livability which don’t necessarily reflect real-world variations in importance.    
+
+## **Bibliography** {#bibliography}
+
+Martino, N., Girling, C. and Lu, Y. (2021). Urban form and livability: socioeconomic and built environment indicators. Buildings & Cities, \[online\] 2(1). Available at: https://journal-buildingscities.org/articles/10.5334/bc.82 \[Accessed 26 Sep. 2024\].
+
+Plaverdvalencia.com. (2024). Documentació – Pla Verd i de la Biodiversitat de València. \[online\] Available at: https://plaverdvalencia.com/documentacio/ \[Accessed 16 Oct. 2024\].
+
+Gaglione, F., Gargiulo, C., Zucaro, F. and Cottrill, C. (2022). Urban accessibility in a 15-minute city: a measure in the city of Naples, Italy. Transportation Research Procedia, 60, pp.378–385. doi:https://doi.org/10.1016/j.trpro.2021.12.049.
+
+Ingram, D.R. (1971). The concept of accessibility: A search for an operational form. Regional Studies, 5(2), pp.101–107. doi:https://doi.org/10.1080/09595237100185131.   
+Zhan, D., Kwan, M.-P., Zhang, W., Fan, J., Yu, J. and Dang, Y. (2018). Assessment and determinants of satisfaction with urban livability in China. Cities, 79, pp.92–101. doi:https://doi.org/10.1016/j.cities.2018.02.025.
+
+Frank, L.D., Sallis, J.F., Saelens, B.E., Leary, L., Cain, K., Conway, T.L. and Hess, P.M. (2009). The development of a walkability index: application to the Neighborhood Quality of Life Study. British Journal of Sports Medicine, \[online\] 44(13), pp.924–933. doi:https://doi.org/10.1136/bjsm.2009.058701.
+
+Talen, E. and Lee, S. (2018). Design for Social Diversity. Second edition. | New York: Routledge, 2017.: Routledge. doi:https://doi.org/10.4324/9781315442846.
+
+Moroni, S. (2016). Urban density after Jane Jacobs: the crucial role of diversity and emergence. City, Territory and Architecture, 3(1). doi:https://doi.org/10.1186/s40410-016-0041-1.
+
+OECD Regions and Cities at a Glance 2022\. (2022). OECD Regions and Cities at a Glance. doi:https://doi.org/10.1787/14108660-en.
+
+Abdul Shakur, E.S., Mohamed, A.F. and Abdul Hadi, A.S. (2017). Housing Affordability Factors for Urban Liveability \- A Preliminary Study. International Journal of Property Sciences, 7(1), pp.1–14. doi:https://doi.org/10.22452/ijps.vol7no1.1.
+
+Royal Geographical Society (2023). Sampling techniques \- RGS. \[online\] www.rgs.org. Available at: https://www.rgs.org/schools/resources-for-schools/sampling-techniques.
+
+INE, Indicadores de renta media y mediana (2015). Instituto Nacional de Estadística. \[online\] Available at: https://www.ine.es/jaxiT3/Tabla.htm?t=31250\&L=0 \[Accessed 28 Nov. 2024\].
+
+Opendatasoft.com. (2024). Seccions censals / Secciones censales. \[online\] Available at: https://valencia.opendatasoft.com/explore/dataset/seccions-censals-secciones-censales/map/?location=13 \[Accessed 28 Nov. 2024\].
+
+Britannica (2019). Spain \- Government and society | Britannica. In: Encyclopædia Britannica. \[online\] Available at: https://www.britannica.com/place/Spain/Government-and-society.
+
+Worldpopulationreview.com. (2024). Spain Cities by Population 2024\. \[online\] Available at: https://worldpopulationreview.com/cities/spain.
+
+Lawrence, R.J. (2014). Understanding Environmental Quality Through Quality of Life (QOL) Studies☆. Reference Module in Earth Systems and Environmental Sciences. doi:https://doi.org/10.1016/b978-0-12-409548-9.09139-9.
+
+Field Studies Council (2023). Fieldwork for Inner Cities. \[online\] Field Studies Council. Available at: https://www.field-studies-council.org/resources/14-16-geography/urban/inner-cities/fieldwork/.
+
+Ansari, S. (2023). The Kuznets Curve. \[online\] Economics Online. Available at: https://www.economicsonline.co.uk/definitions/the-kuznets-curve.html/.
+
+Farzin, Y.H. and Bond, C.A. (2006). Democracy and environmental quality. Journal of Development Economics, 81(1), pp.213–235. doi:https://doi.org/10.1016/j.jdeveco.2005.04.003.
+
+Gough, M.Z. (2015). Reconciling Livability and Sustainability. Journal of Planning Education and Research, 35(2), pp.145–160. doi:https://doi.org/10.1177/0739456x15570320.
+
+www.rentspree.com. (n.d.). How to calculate your tenant’s rent to income ratio. \[online\] Available at: https://www.rentspree.com/calculator/rent-to-income-ratio.
+
+Ine.es. (2025). ArcGIS Web Application. \[online\] Available at: https://ine.es/portalgis/apps/webappviewer/index.html?id=5f280e80aad6440b9ad1ab6ee06a5ead \[Accessed 3 Jan. 2025\].
+
+INE. (n.d.). INEbase / Demografía y población /Cifras de población y Censos demográficos /Encuesta continua de hogares / Últimos datos. \[online\] Available at: https://www.ine.es/dyngs/INEbase/es/operacion.htm?c=Estadistica\_C\&cid=1254736176952\&menu=ultiDatos\&idp=1254735572981.
+
+Gallego-Valadés, A., Ródenas-Rigla, F. and Garcés-Ferrer, J. (2021). Spatial Distribution of Public Housing and Urban Socio-Spatial Inequalities: An Exploratory Analysis of the Valencia Case. Sustainability, 13(20), p.11381. doi:https://doi.org/10.3390/su132011381.
+
+INE, Population by gender and country of birth (2021). Spanish Statistical Office. \[online\] Available at: https://www.ine.es/jaxiT3/Tabla.htm?t=69352\&L=1 \[Accessed 26 Feb. 2025\].
+
+INE, Indicadores de renta media y mediana (2015). Instituto Nacional de Estadística. \[online\] Available at: https://www.ine.es/jaxiT3/Tabla.htm?t=31250\&L=0.
+
+Pérez, R.M. and Pérez, R.M. (2017). Distrito 01: Ciutat Vella \- Valencia Actua. \[online\] Valencia Actua. Available at: https://calles.valenciaactua.es/distrito-01-ciutat-vella/ \[Accessed 26 Feb. 2025\].
+
+Álvaro Mazorra Rodríguez (2024). Social inequality and residential segregation trends in Spanish global cities. A comparative analysis of Madrid, Barcelona, and Valencia (2001-2021). Cities, 149, pp.104935–104935. doi:https://doi.org/10.1016/j.cities.2024.104935.
+
+Aq.upm.es. (2025). Plan Riva para Ciutat Vella, Valencia (España). \[online\] Available at: http://habitat.aq.upm.es/dubai/98/bp435.html \[Accessed 26 Feb. 2025\].
+
+Educational Centers in Valencia. Opendatasoft.com. (2022). \[online\] Available at: https://valencia.opendatasoft.com/explore/dataset/centros-educativos-en-valencia/custom/?sort=codpos \[Accessed 27 Feb. 2025\].
+
+Hospitales y otros centros sanitarios. Opendatasoft.com. (2024). \[online\] Available at: https://valencia.opendatasoft.com/explore/dataset/hospitales/export/?sort=coddistrit \[Accessed 27 Feb. 2025\].
+
+Public Transport Stations. Opendatasoft.com. (2022). \[online\] Available at: https://valencia.opendatasoft.com/explore/dataset/transporte-barrios/export/?location=13 \[Accessed 27 Feb. 2025\].
+
+Pérez, R.M. and Pérez, R.M. (2017). Distrito 11: Poblats Maritims \- Valencia Actua. \[online\] Valencia Actua. Available at: https://calles.valenciaactua.es/distrito-11-poblats-maritims/ \[Accessed 27 Feb. 2025\].
+
+Pérez, R.M. and Pérez, R.M. (2017). Distrito 10: Quatre Carreres \- Valencia Actua. \[online\] Valencia Actua. Available at: https://calles.valenciaactua.es/distrito-10-quatre-carreres/ \[Accessed 27 Feb. 2025\].
+
+Bentlage, M., Müller, C. and Thierstein, A. (2020). Becoming more polycentric: public transport and location choices in the Munich Metropolitan Area. Urban Geography, 42(1), pp.79–102. doi:https://doi.org/10.1080/02723638.2020.1826729.
+
+King, L. (2020). Central Place Theory. 1985\. \[online\] Available at: https://researchrepository.wvu.edu/rri-web-book/8/.
+
+Abozeid, A.S.M. and AboElatta, T.A. (2021). Polycentric vs monocentric urban structure contribution to national development. Journal of Engineering and Applied Science, 68(1). doi:https://doi.org/10.1186/s44147-021-00011-1.
+
+The Geography of Transport Systems | The spatial organization of transportation and mobility. (2017). Transportation and the Urban Spatial Structure | The Geography of Transport Systems. \[online\] Available at: https://transportgeography.org/contents/chapter8/transportation-urban-form/transport-urban-spatial-structure/?utm\_source=chatgpt.com \[Accessed 28 Feb. 2025\].
+
+Hammel, D.J. (2009). Gentrification \- an overview | ScienceDirect Topics. \[online\] www.sciencedirect.com. Available at: https://www.sciencedirect.com/topics/social-sciences/gentrification.
+
+Richardson, J., Mitchell, B. and Franco, J. (2019). Shifting neighborhoods: Gentrification and Cultural Displacement in American Cities. \[online\] National Community Reinvestment Coalition. Available at: https://ncrc.org/gentrification/.
+
+Domański, B. and Gwosdz, K. (2010). MULTIPLIER EFFECTS IN LOCAL AND REGIONAL DEVELOPMENT DOMAŃSKI B. & GWOSDZ K., Multiplier effects in local and regional development KEYWORDS: multiplier effects, local and regional development. QUAESTIONES GEOGRAPHICAE, 29(2), pp.27–37. doi:https://doi.org/10.2478/v10117-010-0012-7.
+
+Narvaez, L., Penn, A. and Griffiths, S. (2013). (PDF) Spatial Configuration and Bid Rent Theory: How urban space shapes the urban economy. \[online\] ResearchGate. Available at: https://www.researchgate.net/publication/315718155\_Spatial\_Configuration\_and\_Bid\_Rent\_Theory\_How\_urban\_space\_shapes\_the\_urban\_economy.
+
+Taylor, D. Income Diversity and the Context of Community Development. \[online\] Available at: https://issuelab.org/resources/591/591.pdf \[Accessed 28 Feb. 2025\].
+
+INE, Gini Index and Income Distribution (2015). Spanish Statistical Office. \[online\] Available at: https://www.ine.es/jaxiT3/Tabla.htm?t=37721\&L=1 \[Accessed 28 Feb. 2025\].
+
+Informe situación socio-laboral de la ciudad de València Datos básicos del mundo del trabajo. (2021). Available at: https://www.pv.ccoo.es/c4e990905f13ba295a8574c10be2ba00000053.pdf \[Accessed 28 Feb. 2025\]. 
+
+Valencia.es. (2017). Ayuntamiento de Valencia. Área de Urbanismo. \[online\] Available at: http://www.valencia.es/ayuntamiento/urbanismo2.nsf/0/E36A204F6CC86126C12584B8002BB918/ \[Accessed 28 Feb. 2025\].
+
+Lovell, L. (2025). Valencia’s stunning parks and outdoor spaces. \[online\] Lonely Planet. Available at: https://www.lonelyplanet.com/articles/valencia-city-parks \[Accessed 1 Mar. 2025\].
+
+Calafate, C.T., Soler, D., Cano, J.-C. and Manzoni, P. (2015). Traffic Management as a Service: The Traffic Flow Pattern Classification Problem. Mathematical Problems in Engineering, 2015, pp.1–14. doi:https://doi.org/10.1155/2015/716598.
+
+HousingAnywhere. (2023). Public transport in Valencia for Expats. \[online\] Available at: https://housinganywhere.com/Valencia--Spain/valencia-public-transport-guide?utm\_source=chatgpt.com \[Accessed 1 Mar. 2025\].
+
