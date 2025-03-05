@@ -1,13 +1,26 @@
 ---
-title: "Spatial Analysis Livability Valencia"
-author: "Rose Legoupil"
-output: 
-  html_document: 
-    toc: true
+title: "Spatial Analysis Livability"
+author: "Rose Legoupil" 
+runningheader: " Valencia" # only for pdf output
+subtitle: "Reproducible analysis" # only for html output 
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+#bibliography: skeleton.bib
+link-citations: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(tufte)
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
 ```
 
 ## **Introduction and Background Information** {#introduction-and-background-information}
