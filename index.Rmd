@@ -2,7 +2,7 @@
 title: "Spatial Analysis Livability"
 author: "Rose Legoupil" 
 runningheader: " Valencia" # only for pdf output
-subtitle: "Reproducible analysis" # only for html output 
+subtitle: "[Reproducible analysis](https://github.com/rose-legoupil/Spatial_Analysis_Livability_Valencia)" # only for html output 
 date: "`r Sys.Date()`"
 output:
   tufte::tufte_html: default
@@ -19,9 +19,243 @@ link-citations: yes
 ```{r setup, include=FALSE}
 library(tufte)
 # invalidate cache when the tufte version changes
-knitr::opts_chunk$set(cache.extra = packageVersion('tufte'))
+knitr::opts_chunk$set(cache.extra = packageVersion('tufte'), 
+                      echo=FALSE, message=FALSE, warning=FALSE)
 options(htmltools.dir.version = FALSE)
 ```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(sf)
+#library(ggplot)
+library(ggplot2)
+library(dplyr)
+library(tmap)
+#library(rgdal)
+library(classInt)
+library(readxl)
+library(ggspatial)
+library(fmsb)
+library(janitor)
+library(GGally)
+library(tidyr)       
+library(tidyverse)
+library(reshape2)
+library(classInt)   
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# ======================
+# 1. LOAD ALL ORIGINAL FILES
+# ======================
+
+# Income data
+income_data <- readxl::read_excel("data-raw/income_data.xlsx", skip = 7)
+
+# Spatial data
+geo_data <- sf::st_read("data-raw/seccions-censals-secciones-censales.geojson",
+                        quiet=TRUE)
+valencia_districts <- st_read("data-raw/districtes-distritos.geojson",
+                        quiet=TRUE)
+
+# Environmental data
+environmental_survey <- readxl::read_excel("data-raw/environmental survey.xlsx")
+points <- st_read("data-raw/EE Data Collection.kml",
+                        quiet=TRUE)
+
+# Final analysis data
+final_data <- readxl::read_excel("data-raw/final data.xlsx")
+final3_data <- readxl::read_excel("data-raw/final3 data.xlsx")
+
+# Social/diversity data
+nationality_distribution <- readxl::read_excel("data-raw/nationality_distribution.xlsx")
+Gini_coefficient <- readxl::read_excel("data-raw/Gini coefficient.xlsx")
+social_diversity <- readxl::read_excel("data-raw/social diversity.xlsx")
+
+# Accessibility data
+schools <- st_read("data-raw/centros-educativos-en-valencia.geojson",
+                        quiet=TRUE)
+hospitals <- st_read("data-raw/hospitales.geojson",
+                        quiet=TRUE)
+transport_stations <- st_read("data-raw/transporte-barrios.geojson",
+                        quiet=TRUE)
+
+accessibility_density <- readxl::read_excel("data-raw/accessibility density.xlsx")
+
+# Economic data
+economic_vitality <- readxl::read_excel("data-raw/economic vitality.xlsx")
+
+# Geographic context data
+spatial_analysis <- readxl::read_excel("data-raw/spatial_analysis.xlsx")
+europe <- ne_countries(continent = "Europe", returnclass = "sf")
+spain_region <- st_read("data-raw/georef-spain-comunidad-autonoma.geojson",
+                        quiet=TRUE)
+
+# housing_affordability
+housing_affordability <- readxl::read_excel("data-raw/housing_affordability.xlsx", 
+    sheet = "tabla-31250")
+
+# ======================
+# 2. DATA TRANSFORMATIONS
+# ======================
+
+# ----------------------
+# Income Data Processing
+# ----------------------
+income_data <- income_data |>
+  janitor::clean_names() |>
+  dplyr::mutate(
+    census.unit = x1,
+    income.2022 = x2022
+  ) |>
+  tidyr::separate(
+    col = census.unit, 
+    sep = " ",
+    into = c("id", "name", "subname"),
+    remove = FALSE, 
+    extra = "merge",   
+    fill = "right"
+  )
+
+# Prepare geo data ID for merging
+geo_data <- geo_data |> 
+  dplyr::mutate(
+    id = paste0("46250", 
+                substring(coddistsecc, 1, 2),
+                "0",
+                substring(coddistsecc, 3, 4))
+  )
+
+# Join income and spatial data
+valencia_combined <- dplyr::left_join(geo_data, income_data, by = "id")
+
+# Create income brackets
+breaks <- classInt::classIntervals(valencia_combined$income.2022,
+                                  n = 3, 
+                                  style = "jenks")$brks
+
+valencia_combined <- valencia_combined |>
+  dplyr::mutate(
+    income_bracket = cut(
+      income.2022,
+      breaks = breaks,
+      labels = c("Low (<=15,000)", "Medium (15,000-25,000)", "High (>25,000)"),
+      include.lowest = TRUE
+    )
+  )
+
+# Filter out excluded census sections
+excluded_ids <- c("1916", "1909", "1908", "1907", "1701", "1708", "1706", "1707", "1703")
+valencia_filtered <- valencia_combined |>
+  dplyr::filter(!(coddistsecc %in% excluded_ids))
+
+# ----------------------
+# District-Level Processing
+# ----------------------
+# Merge district data with spatial analysis
+spatial_analysis <- left_join(valencia_districts, spatial_analysis, by = "nombre")
+spatial_analysis_filtered <- spatial_analysis |>
+  filter(!nombre %in% c("POBLATS DEL NORD", "POBLATS DEL SUD"))
+
+# Reshape for facet mapping
+valenciamap_long <- spatial_analysis_filtered |>
+  tidyr::pivot_longer(
+    cols = c(social_diversity_index, economic_vitality_indicator, 
+             afffordability, accessibility, environmental_quality),
+    names_to = "Indicator", 
+    values_to = "Value"
+  )
+
+# ----------------------
+# Environmental Quality Processing
+# ----------------------
+# Prepare radar chart data
+max_min <- data.frame(
+  District = c("Max", "Min"),
+  Litter = c(5, 0),
+  Graffiti = c(5, 0),
+  Air_Quality = c(5, 0),
+  Noise_Pollution = c(5, 0),
+  Green_Space_Cover = c(5, 0),
+  Presence_of_Art = c(5, 0),
+  Building_Design = c(5, 0),
+  Pathway_Maintenance = c(5, 0)
+) 
+colnames(environmental_survey) <- names(max_min)
+
+# Combine with survey data
+radar_data <- rbind(max_min, environmental_survey)
+
+# Clean column names
+radar_data <- radar_data |>
+  dplyr::rename_with(~ gsub("_", " ", .x), .cols = -District)
+
+# ----------------------
+# Social Diversity Processing
+# ----------------------
+# Clean and merge diversity data
+Gini_coefficient <- janitor::clean_names(Gini_coefficient)
+nationality_distribution <- janitor::clean_names(nationality_distribution)
+
+sd <- dplyr::left_join(nationality_distribution, Gini_coefficient, by = "district") |>
+  janitor::clean_names()
+
+# Filter facilities data
+selected_districts <- c("1", "2", "6", "8", "12", "13", "10", "11", "15")
+hospitals_filtered <- hospitals |>
+  dplyr::filter(coddistrit %in% selected_districts)
+transport_filtered <- transport_stations |>
+  dplyr::filter(coddistrit %in% selected_districts)
+
+# ----------------------
+# Accessibility Processing
+# ----------------------
+accessibility_density <- accessibility_density |>
+  janitor::clean_names()
+
+accessibility_long <- accessibility_density |>
+  dplyr::select(district, schools_per_km2, hospitals_per_km2, transport_per_km2) |>
+  tidyr::pivot_longer(!district, names_to = "amenities", values_to = "density")
+
+# ----------------------
+# Geographic Context Processing
+# ----------------------
+valencia <- spain_region[spain_region$acom_name == "Comunitat Valenciana", ]
+europe_bbox <- st_bbox(c(xmin = -25, ymin = 35, xmax = 40, ymax = 72), crs = st_crs(europe))
+#str(europe)
+sf_use_s2(FALSE)
+europe_cropped <- st_crop(europe, europe_bbox)
+#plot(europe_cropped)
+
+
+excluded_district <- c("17" , "19")
+District_filtered <- valencia_districts |>
+  filter( !(coddistrit %in% excluded_district))
+# ----------------------
+# Final Data Processing
+# ----------------------
+final_data <- final_data |>
+  janitor::clean_names() |>
+  dplyr::mutate(district = as.factor(district))
+
+# ======================
+# RESULTING OBJECTS FOR CHARTING
+# ======================
+# cleaned and transformed objects ready for visualization:
+# - valencia_filtered: Spatial+income data with income brackets
+# - valenciamap_long: District-level indicators in long format
+# - radar_data: Environmental quality data for radar charts
+# - sd: Social diversity and Gini coefficient data
+# - accessibility_long: Accessibility metrics in long format
+# - europe_cropped: Map data for Europe
+# - valencia: Map data for Valencia region
+# - final_data: Processed data for final visualizations
+```
+
+
 
 ## **Introduction and Background Information** {#introduction-and-background-information}
 
@@ -36,6 +270,47 @@ Urban livability is defined as the wellbeing and quality of life of inhabitants 
 #### **Geographical Context**  {#geographical-context}
 
 As shown by Fig.1, Spain is located in southwestern Europe, sharing a border with France and Portugal. Fig.2 shows how Spain is divided into 17 autonomous communities (regions), one of them being Valencia located on the eastern coast of the country *(Britannica, 2019\)*. This investigation focuses on the city of Valencia, part of the region of Valencia, which is an urban area composed of 19 districts. Valencia is an interesting location to carry out an investigation on urban environment given it is the 3th largest city of Spain with a population of 814 208 residents in 2024 *(World population review, 2024\)*. 
+
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+ggplot(data = europe_cropped) +
+  geom_sf(fill = "#fefeea", color = "black") +  # Background countries
+  geom_sf(data = subset(europe_cropped, sovereignt == "Spain"), fill = "#c22234", color = "black") +  # Highlight Spain
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#c7edff"),  # Light blue background
+    panel.grid = element_line(color = "black"),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  ) +
+  labs(title = "Map of Europe Highlighting Spain") +
+  coord_sf(datum = NA) +  # Removes coordinate labels
+  # Add scale bar
+  annotation_scale(location = "br", width_hint = 0.1) +
+  # Add north arrow
+  annotation_north_arrow(location = "tl", which_north = "true", 
+                         height = unit(1, "cm"), width = unit(1, "cm"))
+
+ggplot(data = spain_region) +
+  geom_sf(fill = "#fefeea", color = "black") +  # Background for all regions
+  geom_sf(data = valencia, fill = "#c22234", color = "black") +  # Highlight Valencia
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#c7edff"),  # Light blue background
+    panel.grid = element_line(color = "black"),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  ) +
+  labs(title = "Map of Spain Highlighting Valencia") +
+  coord_sf(datum = NA) +  # Removes coordinate labels
+  # Add scale bar
+  annotation_scale(location = "br", width_hint = 0.1) +
+  # Add north arrow
+  annotation_north_arrow(location = "tl", which_north = "true", height = unit(1, "cm"), width = unit(1, "cm"))
+
+```
+
 
 2. ### **Background Information** {#background-information}
 
@@ -89,9 +364,42 @@ The concept of the sustainable urban development model also demonstrates the int
 
 To explore the relationship between socioeconomic indicators of livability and environmental quality, a stratified sampling strategy was used to ensure comprehensive coverage of Valencia’s 19 districts with varying socioeconomic profiles. In the context of a spatial analysis of Valencia, stratified sampling was used as it allows a balanced representation of the different districts and census sections of the urban area. In addition, the stratification consisted of dividing the census sections of Valencia (subunits within the different districts) into 3 groups of low, medium, high income brackets to ensure a selection of districts with varying socioeconomic characteristics. To generate this stratified map, secondary data on Average income indicators in the different census sections of Valencia was downloaded on the National Statistics Institute of Espana *(INE, 2015\)* and a shapefile of Valencia was downloaded from the Ajuntament de Valencia website *(Opendatasoft.com, 2024\)*. All data was then imported and transformed on the computer program RStudio to generate the map seen on *Fig.5*. Note that the District Pobles del Nord and Pobles del Sud have been excluded from the sampling because of their remoteness from Valenica’s CBD. Given the urban focus of this investigation, this exclusion would ensure that the analysis is centered on areas where urban socioeconomic dynamics are most relevant.  
 
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+
+ggplot() +
+  geom_sf(data = valencia_filtered, aes(fill = income_bracket), 
+          color = "grey", size = 0.2) +
+  
+  geom_sf(data = District_filtered, fill = NA, 
+          color = "black", size = 0.8) +
+  
+  geom_sf_text(data = District_filtered, aes(label = coddistrit), 
+               size = 3.5, fontface = "bold", color = "black") +
+  
+  scale_fill_manual(values = c("Low (<=15,000)" = "#0d0887",
+                               "Medium (15,000-25,000)" = "#cc4678",
+                               "High (>25,000)" = "#f0f921"),
+                    name = "Income Bracket") +
+  
+  annotation_scale(location = "bl", width_hint = 0.3, text_cex = 0.8) +
+  
+  theme_void() +
+  labs(
+    title = "Income Levels by District in Valencia",
+    subtitle = "Visualization of Income Distribution"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+
+```
  
 
-Then 3 districts from each income bracket were selected using random sampling. Random sampling was used as it reduces subjectivity in the selection of the districts to avoid bias and is an effective method of sampling for large populations like the city of Valencia *(Royal Geographical Society, 2023\)*. For each district both primary and secondary data was collected as indicators to measure livability and environmental quality around Valencia. For any primary data collection, 3 census sections within each district were randomly selected and the measurements were averaged to give representative data of the district as whole. 
+Then 3 districts from each income bracket were selected using random sampling. Random sampling was used as it reduces subjectivity in the selection of the districts to avoid bias and is an effective method of sampling for large populations like the city of Valencia *(Royal Geographical Society, 2023\)*. 
+
+District selected: Ciutat Vella (District 1), L'Eixample (District 2), El Pal del Real (District 6), Patraix (District 8), Camins al Grau (District 12), Algiros (District 13), Quatre Carreres (District 10), Poblats Maritims (District 11), Rascanya (District 15).
+
+For each district both primary and secondary data was collected as indicators to measure livability and environmental quality around Valencia. For any primary data collection, 3 census sections within each district were randomly selected and the measurements were averaged to give representative data of the district as whole. 
 
 2. ### **Measuring Affordability**      {#measuring-affordability}
 
@@ -101,6 +409,25 @@ Rent-to-Income Ratio \=average annual rentaverage annual income100
 
 If the rent-to-income ratio is below 30% housing is considered affordable but the affordability threshold indicates that above 30% is considered a rent burden and housing may be unaffordable for the average person *(www.rentspree.com)*. To measure the rent-to-income ratio two data sets were used: average income in euros in 2022 *(INE, 2015\)* and monthly rental prices per m2 in euros in 2022 *(Ine.es, 2025\)*. Then the total monthly rent was calculated by multiplying the per m2 rent by the average apartment size which is around 90m2  in Valencia *(INE)*. Comparing those two metrics, the rent-to-income ratio was then calculated shown in *Fig.6*. 
 
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+
+ggplot(housing_affordability, aes(y = reorder(District, `Rent-to-Income.Ratio`), x = `Rent-to-Income.Ratio`)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  coord_flip() +
+  labs(
+    title = "Fig.6 Rent-to-Income ratio by Districts",
+    x = "Rent-to-Income Ratio (%)",
+    y = "Districts"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 12),
+    axis.title = element_text(size = 15),
+    plot.title = element_text(size = 12, face = "bold")
+  )
+
+```
+
 According to *Fig.6*, we can observe that the districts in the highest income bracket (Ciutat Vella, l'Eixample, and El Pla del Real) are also the districts with the rent-to-income ratio is the lowest below the 30% affordability threshold. This indicates that those districts are the most affordable, specifically in L’eixample with the lowest ratio of 21.3%. All other districts are above the 30% ratio which indicates housing may be unaffordable for the average person, specifically in Rascanaya which reaches the highest ratio of 37.2%. Hence, the graph does not support the hypothesis that affordability decreases with income. However, this can be explained because high-income residents can afford higher rent, but rental prices are not proportionally high and so rent takes up a smaller percentage of their income. For instance, while Ciutat Vella has a relatively high average annual rent of €4860, it is offset by an even higher average annual income of €20593, making rent more manageable for its residents. Hence, even if the absolute cost of rent follows the expected trend, with higher-income districts having higher rental prices, affordability does not follow the same pattern. Instead, high-income districts have a greater level of  affordability because rent represents a smaller financial burden proportionally to income. Furthermore, other factors could affect the data like the provision of public housing. Since public housing is subsidized by public funds and provided to people on low incomes, it provides a rental option which is more affordable than the market rate. Hence, this can contribute to higher levels of housing affordability. Studied on the spatial distribution of public housing in Valencia indicates that the district with the highest number of public housing buildings is Ciutat Vella with 34 buildings *(Gallego-Valadés, A., Ródenas-Rigla, F. and Garcés-Ferrer, J., 2021\)*. This coincides with the finding that Ciutat Vella, despite having a higher average income, also exhibits a lower rent-to-income ratio compared to other districts. Furthermore, income elasticity of demand can be considered. Since demand for housing is more inelastic for higher-income households living in Ciutat Vella, L’Eixample, and El Pl del Real, they are less sensitive to changes in rent prices which contributes to the lower rent-to-income ratios observed in these districts.     
  
 
@@ -108,23 +435,147 @@ According to *Fig.6*, we can observe that the districts in the highest income br
 
 Two aspects of social diversity were measured inducing ethnic and income diversity. Hence, the inductors choosed where the Gini coefficient which is often used as a measure of income diversity *(Taylor, D)* and the percentage of the population with non-Spanish nationality. Both datasets were collected on the National Statistics Institute website *(INE, Population by gender and country of birth, 2021)(INE, Gini Index and Income Distribution, 2015\)*. The results are presented as a scatter graph on *fig.7* in order to display the relationship between the two indicators and identify districts that may have varying levels of social integration or segregation.  
 
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+
+ggplot(data = sd,
+       aes(x = percentage_of_non_spanish,
+           y = gini_coefficient,
+           label = district)) +
+  geom_point() +
+  geom_label() +
+  labs(
+    title = "Fig. 7 Gini Coefficient and Percentage of non-spanish by District",
+    x = "Percentage of Non-Spanish Residents",
+    y = "Gini Coefficient"
+  ) +
+  iomthemes::theme_iom()
+
+```
+
 According to *Fig.7*, we can observe that there is no clear correlation between the percentage of non-spanish and Gini coefficients. Some districts like Patraix display low levels of both non-spanish and Gini coefficients down to 10.8% and 28.9% respectively. Other districts like Ciutat Vella show a diverging case where both indicators are the highest up to 20.7% of non-spanish residents and 38.2% for the Gini coefficient. For the rest of the districts, there is only little fluctuation in terms of the Gini coefficients which remains in a range of 4.1% but varying levels of non-spanish residents which are particularly high in districts from the lowest income bracket (Rascanya, Poblats Maritims, and Quatre Carres). For example the percentage of non-spanish residents goes up to 19.5% in Rascanya. The only anomaly is Camins al Grau which also has a relatively high level of non-spanish up to 16.7% while being from the middle income bracket group but this could be explained by the relatively high level of affordability (Camins al Grau being just under the 30% affordability threshold) which can attract a more diverse demographic. Overall, if we look at the districts from the higher income bracket (Ciutat Vella, l'Eixample, and El Pla del Real), we observe that the level of non-Spanish population varies in each case. This supports the hypothesis that within higher income brackets, whether social diversity increases or decreases does not follow a clear trend. This can be explained by historical migration patterns which have a significant impact on the level of social and ethnic diversity. For example, Ciutat Vella is one of the oldest areas of Valencia and acts as a historic center *(Pérez, R.M. and Pérez, R.M., 2017\)*. Hence, the area has attracted a diverse demographic of foreign workers and tourists from varying ethnic backgrounds *(Álvaro Mazorra Rodríguez, 2024).* Furthermore, in 1992, Valencia signed the Plan Integral de Rehabilitación de Valencia (Plan RIVA) to solve the issue of urban degradation. This consisted of constructing new facilities for social and educational purposes as well as public housing which successfully contributed to the rehabilitation of Ciutat Vella *(Aq.upm.es., 2025\)* and further stimulated the arrival of new residents and tourists. However, the gentrification that resulted from the project also caused elderly, low income immigrants, and other marginalized groups to be displaced to peripheral districts. Hence, this can explain why districts that are relatively far away from the city center like Rascanya, Quatre Carres, or Poblats Maritims have higher levels of non-spanish residents 19.5%, 16.0%, and 16.8% respectively. The main anomaly is Patraix which displays a low 10.8% of non-spanish residents while being relatively far from Ciutat Vella. This can be a result of Patraix neighborhoods being more residential and therefore attracting families and long-term residents which contributes to a stable but potentially less diverse population.
 
-The two metrics were then used to calculate a composite indicator of social diversity displayed in the sample calculation in *Fig.8*. Both indicators where normalized then the social diversity index for each district was calculated by adding both normalized indicators (equal weighting was used as it is assumed that both indicators have equal importance). 
+The two metrics were then used to calculate a composite indicator of social diversity. Both indicators where normalized then the social diversity index for each district was calculated by adding both normalized indicators (equal weighting was used as it is assumed that both indicators have equal importance). 
+
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+
+ggplot(social_diversity |> janitor::clean_names(),
+       aes(x = reorder(district, social_diversity_index),
+           y = social_diversity_index, 
+           fill = social_diversity_index)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Fig. 9 Social Diversity Index by District in Valencia",
+       x = "District",
+       y = "Social Diversity Index") +
+  theme_minimal() +
+  coord_flip() +  # Flip chart for readability
+  scale_fill_gradient(low = "#B3CDE0", high = "#011F4B") +  # Light blue to deep navy
+  theme(
+    axis.title.x = element_text(size = 16, face = "bold"),  # Increase X-axis label size
+    axis.title.y = element_text(size = 16, face = "bold"),  # Increase Y-axis label size
+    axis.text.x = element_text(size = 14),  # Increase X-axis tick labels
+    axis.text.y = element_text(size = 14)   # Increase Y-axis tick labels
+  )
+
+```
 
 The results are displayed in *Fig.9* as a bar chart showing the level of social diversity by districts. Once again, we can observe that there is no particular trend between the social diversity index and income bracket as the three districts with the highest social diversity score all belong to different income brackets. For example, Ciutat Vella has the highest score of social diversity of 1.00 because of mixed incomes and the significant presence of foreign residents. To the other extreme Patraix has a score of 0.04 which indicates very low social diversity. 
 
 4. ### **Measuring Accessibility**        {#measuring-accessibility}
 
-To measure accessibility, the focus was around three main facilities encompassing schools (including public schools, charter schools, and private schools), hospitals, and public transport facilities as those are key indicators of urban connectivity and accessibility. All data was collected secondarily on the Ajuntament de Valencia website *(Educational Centers in Valencia, 2022)(Hospitales y otros centros sanitarios, 2024)(Public Transport Stations, 2022\)*. For a spatial representation of the data, the distribution of schools, hospitals, and transport stations are displayed on *Fig.10*. In terms of schools, we can observe that the two districts with the greatest number of schools are Poblats Maritims with 34 schools and Quatre Carres with 32 schools which are also the districts with the greatest total surface area of 9783km² and 11325km² respectively *(Pérez, R.M. and Pérez, R.M., 2017\)*. Inversely, the smallest district in surface area, Ciutat Vella which is 169km², is also the district with the lowest number of schools down to 15 schools. This same pattern follows for the number of hospitals and public transport facilities where Quatre Carres have up to 6 hospitals and 153 public transport stations while Ciutat Vella only has 1 hospital and 49 public transport stations. Hence, the general trend is that the greater the surface area the greater the number of facilities. However, this becomes less significant to measure accessibility as a higher number of facilities does not necessarily mean they are evenly distributed or easily reachable for all urban dwellers. Hence, for a more significant evaluation of accessibility, facilities per km² was also measured for a focus on spatial availability adjusted to surface area variation between districts.   
+To measure accessibility, the focus was around three main facilities encompassing schools (including public schools, charter schools, and private schools), hospitals, and public transport facilities as those are key indicators of urban connectivity and accessibility. All data was collected secondarily on the Ajuntament de Valencia website *(Educational Centers in Valencia, 2022)(Hospitales y otros centros sanitarios, 2024)(Public Transport Stations, 2022\)*. For a spatial representation of the data, the distribution of schools, hospitals, and transport stations are displayed on *Fig.10*. In terms of schools, we can observe that the two districts with the greatest number of schools are Poblats Maritims with 34 schools and Quatre Carres with 32 schools which are also the districts with the greatest total surface area of 9783km² and 11325km² respectively *(Pérez, R.M. and Pérez, R.M., 2017\)*. Inversely, the smallest district in surface area, Ciutat Vella which is 169km², is also the district with the lowest number of schools down to 15 schools. This same pattern follows for the number of hospitals and public transport facilities where Quatre Carres have up to 6 hospitals and 153 public transport stations while Ciutat Vella only has 1 hospital and 49 public transport stations. Hence, the general trend is that the greater the surface area the greater the number of facilities. However, this becomes less significant to measure accessibility as a higher number of facilities does not necessarily mean they are evenly distributed or easily reachable for all urban dwellers. 
 
-Hence, *Fig.11* shows the number of facilities per km² in each district. We can observe that the two districts with the highest level of public transport station per km² are Ciutat Vella and L’Eixample with 0.29 stations/km² and 0.04 stations/km² respectively. On the other hand, Poblats Maritims and Quatre Carres have the lowest level of public transport down to 0.01 stations/km² for both districts. Hence, the general trend shows that districts from the higher income bracket (Ciutat Vella, l'Eixample, and El Pla del Real) also have a greater public transport station density and hence a greater level of accessibility and vice versa with districts from the lowest income bracket (Poblats Maritims, Quatre Carres, and Rascanya). This can be explained using the monocentric city model which demonstrates how land use and property values change relative to distance from the CBD. Hence, according to the model, Ciutat Vella which is the historic center of Valencia and L’Eixample which acts as the primary CBD will naturally have a greater public transport density as these areas have the highest demand for accessibility. This is because the concentration of businesses, services, and economic activity in the CBD creates a stronger incentive for investment in transport infrastructure which in turn increases accessibility *(Bentlage, M., Müller, C. and Thierstein, A., 2020\)*. Furthermore, the pattern is the same with school and hospital density which are the highest in Ciutat Vella with 0.089 schools/km² and 0.0059 hospital/km² while being the lowest in Quatre Carres down to 0.003 schools/km² and 0.0005 hospital/km². This is because, according to the central place theory, higher-order services like hospitals and schools (specially universities) are usually concentrated in large urban centers in districts like Ciutat Vella *(King, L., 2020\)*. Hence, with no notable anomalies, the data supports the first hypothesis that accessibility increases in the CBD where the higher income bracket districts are located. 
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+ggplot() +
+  # District borders
+  geom_sf(data = District_filtered, fill = NA, color = "black", linewidth = 1.5) +
+  
+  # Transport stations (circles)
+  geom_sf(data = transport_filtered, color = "#cc4678", shape = 19, size = 3) +
+  
+  # Hospitals (squares)
+  geom_sf(data = hospitals_filtered, color = "#f0f921", shape = 15, size = 3) +
+  
+  # Schools (triangles)
+  geom_sf(data = schools, color = "#0d0887", shape = 17, size = 3) +
+  
+  # Title and theme
+  labs(title = "Fig. 10 Public Facilities Distribution in Valencia") +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
+    legend.position.inside = c(0.1, 0.15),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 12)
+  ) +
+  
+  # Custom legend
+  scale_shape_manual(
+    name = "Facilities",
+    values = c(17, 15, 19),
+    labels = c("Schools", "Hospitals", "Transport Stations")
+  ) +
+  scale_color_manual(
+    name = "Facilities",
+    values = c("#0d0887", "#f0f921", "#cc4678"),
+    labels = c("Schools", "Hospitals", "Transport Stations")
+  ) +
+  guides(
+    shape = guide_legend(override.aes = list(size = 4)),
+    color = guide_legend(override.aes = list(size = 4))
+  )
+```
+
+
+Hence, for a more significant evaluation of accessibility, facilities per km² was also measured for a focus on spatial availability adjusted to surface area variation between districts. Results are displayed on *Fig.11* which shows the number of facilities per km² in each district. We can observe that the two districts with the highest level of public transport station per km² are Ciutat Vella and L’Eixample with 0.29 stations/km² and 0.04 stations/km² respectively. On the other hand, Poblats Maritims and Quatre Carres have the lowest level of public transport down to 0.01 stations/km² for both districts. Hence, the general trend shows that districts from the higher income bracket (Ciutat Vella, l'Eixample, and El Pla del Real) also have a greater public transport station density and hence a greater level of accessibility and vice versa with districts from the lowest income bracket (Poblats Maritims, Quatre Carres, and Rascanya). This can be explained using the monocentric city model which demonstrates how land use and property values change relative to distance from the CBD. Hence, according to the model, Ciutat Vella which is the historic center of Valencia and L’Eixample which acts as the primary CBD will naturally have a greater public transport density as these areas have the highest demand for accessibility. This is because the concentration of businesses, services, and economic activity in the CBD creates a stronger incentive for investment in transport infrastructure which in turn increases accessibility *(Bentlage, M., Müller, C. and Thierstein, A., 2020\)*. Furthermore, the pattern is the same with school and hospital density which are the highest in Ciutat Vella with 0.089 schools/km² and 0.0059 hospital/km² while being the lowest in Quatre Carres down to 0.003 schools/km² and 0.0005 hospital/km². This is because, according to the central place theory, higher-order services like hospitals and schools (specially universities) are usually concentrated in large urban centers in districts like Ciutat Vella *(King, L., 2020\)*. Hence, with no notable anomalies, the data supports the first hypothesis that accessibility increases in the CBD where the higher income bracket districts are located. 
+
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+ggplot(data = accessibility_long, 
+       aes(x = district, 
+           y = density, 
+           fill = amenities)) +
+  geom_bar(stat = "identity", position = "dodge") +  # Grouped bars
+  labs(title = "Fig. 11 Amenities per km² in Each District",
+       x = "District",
+       y = "Amenities per km²",
+       fill = "Facility Type") +
+  iomthemes::theme_iom(grid = "Y") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 14),  # Larger x-axis text
+    axis.text.y = element_text(size = 14),  # Larger y-axis text
+    axis.title.x = element_text(size = 16, face = "bold"),  # Larger x-axis label
+    axis.title.y = element_text(size = 16, face = "bold")   # Larger y-axis label
+  ) +
+  scale_fill_manual(values = c(
+    "schools_per_km2" = "#0d0887", 
+    "hospitals_per_km2" = "#f0f921", 
+    "transport_per_km2" = "#cc4678")) +
+  scale_y_continuous()  # Normal scale (no log transformation)
+```
+
 
 5. ### **Measuring Economic Vitality**        {#measuring-economic-vitality}
 
-To measure economic vitality two matrices were used including average income per person and unemployment level. Both dataset was collected secondarily *(INE, Indicadores de renta media y mediana, 2015)(Informe situación socio-laboral de la ciudad de València Datos básicos del mundo del trabajo, 2021\)*. Both indicators were then normalized and combined to create a composite indicator of economic vitality. As shown by the sample calculation in *Fig.12*, the standardized unemployment rate was subtracted from 1 as this indicator contributes negatively to economic vitality. 
+To measure economic vitality two matrices were used including average income per person and unemployment level. Both dataset was collected secondarily *(INE, Indicadores de renta media y mediana, 2015)(Informe situación socio-laboral de la ciudad de València Datos básicos del mundo del trabajo, 2021\)*. Both indicators were then normalized and combined to create a composite indicator of economic vitality. The standardized unemployment rate was subtracted from 1 as this indicator contributes negatively to economic vitality. 
 
-The economic vitality scores were displayed for each district as a bar chart, shown in *Fig.13*, to facilitate easier comparison. We can observe that the data support the hypothesis that economic vitality increases with income as the three districts with the highest economic vitality score are also the districts from the highest income bracket. This includes El Pla del Real with a score of 1.00, and L’Eixample and Ciutat Vella with an equal score of 0.89. Conversely, Rascanya, Poblats Maritims, and Quatre Carreres are the districts from the lowest income bracket and have the lowest economic vitality score down to 0.15, 0.08, and 0.07 respectively. There is no notable anomaly, though we can note that the economic vitality score of Camins al Grau is relatively lower down to 0.28 despite having moderate income levels. This is because of the high unemployment rate of 8.1% in Camins al Grau which brings the economic vitality score downard. Overall, this trend can be explained by the multiplier effect in districts like Ciutat Vella and L’Eixample which experience high consumer and businesses confidence due to high income level and the commercial and economic hub that the CBD represents *(Valencia.es., 2017\)*. This further contributes to the low unemployment rate in both Ciutat Vella and L’Eixample which is only 2.6% and 3.6% respectively, boosting economic vitality.                
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+ggplot(economic_vitality, aes(x = reorder(district, economic_vitality_indicator), y = economic_vitality_indicator, fill = economic_vitality_indicator)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Fig. 13 Economic Vitality Index by District in Valencia",
+       x = "District",
+       y = "Economic Vitality Index") +
+  theme_minimal() +
+  coord_flip() +  
+  scale_fill_gradient(low = "#B3CDE0", high = "#011F4B") +  
+  theme(
+    axis.title.x = element_text(size = 14, face = "bold"),  # Increase X-axis label size
+    axis.title.y = element_text(size = 14, face = "bold"),  # Increase Y-axis label size
+    axis.text.x = element_text(size = 15),  # Increase X-axis tick labels
+    axis.text.y = element_text(size = 15)   # Increase Y-axis tick labels
+  )
+
+```
+
+The economic vitality scores are displayed for each district as a bar chart, shown in *Fig.13*, to facilitate easier comparison. We can observe that the data support the hypothesis that economic vitality increases with income as the three districts with the highest economic vitality score are also the districts from the highest income bracket. This includes El Pla del Real with a score of 1.00, and L’Eixample and Ciutat Vella with an equal score of 0.89. Conversely, Rascanya, Poblats Maritims, and Quatre Carreres are the districts from the lowest income bracket and have the lowest economic vitality score down to 0.15, 0.08, and 0.07 respectively. There is no notable anomaly, though we can note that the economic vitality score of Camins al Grau is relatively lower down to 0.28 despite having moderate income levels. This is because of the high unemployment rate of 8.1% in Camins al Grau which brings the economic vitality score downard. Overall, this trend can be explained by the multiplier effect in districts like Ciutat Vella and L’Eixample which experience high consumer and businesses confidence due to high income level and the commercial and economic hub that the CBD represents *(Valencia.es., 2017\)*. This further contributes to the low unemployment rate in both Ciutat Vella and L’Eixample which is only 2.6% and 3.6% respectively, boosting economic vitality.                
  
 
 6. ### **Measuring Environmental Quality**        {#measuring-environmental-quality}
@@ -132,21 +583,100 @@ The economic vitality scores were displayed for each district as a bar chart, sh
 Different formats of environmental quality surveys exist, but in the case of this investigation 4 essential factors of environmental quality were assessed: cleanness, level of pollution, access to green space, and aesthetic appeal. For each factor, multiple indicators were graded on a scale of quality from 1 to 4\. To measure the environmental quality across Valencia, a total of 27 environmental quality surveys were conducted on the 11 of january 2025\. This includes 3 environmental quality surveys in 3 different census sections randomly selected within each district in order to have a more representative measure of environmental quality of the districts as a whole. The geographical location of each site where data was collected is shown on *Fig.14.* Since the investigation focuses on spatial comparison, no repeat was carried out when assessing environmental quality.   
 ***Fig.14: Map showing geographical point of data collection in Valencia (shown by the red dots)*** 
 
-  
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+ggplot() +
+  geom_sf(data = District_filtered, fill = "lightblue", color = "black") +
+  geom_sf(data = points, color = "red", size = 2) +
+  annotation_scale(location = "bl", width_hint = 0.2) +  # Scale bar in bottom left
+  annotation_north_arrow(location = "tr", which_north = "true",  
+                         pad_x = unit(0.5, "cm"), pad_y = unit(0.5, "cm"),
+                         style = north_arrow_fancy_orienteering) +  # North arrow in top right
+  theme_void()
+```
 
-The results of the environment survey are displayed as a radial line graph for each district shown by *Fig.15.* For each district, the indicator scores are averaged across the three survey locations which aim to reduce  variability from individual survey locations. Note that the scoring is consistent: a score of 1 indicates a low level of the given indicator (whether positive or negative), while a score of 4 indicates a high level. 
-
-A majority of the inductors were assessed visually except from air quality and noise pollution that were measured using digital tools shown in *Fig.16*. For air quality the level of carbon dioxide was recorded with a digital Co2 monitor and for noise pollution decibel level was recorded using a decibel meter app. In both cases, 5 repeats were taken each time and an average was calculated in order to have more reliable data and when Co2 or decibel was measured the recording tool was kept at the same distance from the floor each time. Finally, so that the data could be compared with the rest of the environmental survey, measurements were converted into a standardized scale using the following equation.     
+A majority of the indicators were assessed visually except from air quality and noise pollution that were measured using digital tools. For air quality the level of carbon dioxide was recorded with a digital Co2 monitor and for noise pollution decibel level was recorded using a decibel meter app. In both cases, 5 repeats were taken each time and an average was calculated in order to have more reliable data and when Co2 or decibel was measured the recording tool was kept at the same distance from the floor each time. Finally, so that the data could be compared with the rest of the environmental survey, measurements were converted into a standardized scale using the following equation.     
 
 Scaled Value \= 1 \+ (X \- Xmin)  (4 \- 0)Xmax \- Xmin
 
+The results of the environment survey are displayed as a radial line graph for each district shown by *Fig.15.* For each district, the indicator scores are averaged across the three survey locations which aim to reduce  variability from individual survey locations. Note that the scoring is consistent: a score of 1 indicates a low level of the given indicator (whether positive or negative), while a score of 4 indicates a high level. 
+
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+max_min <- data.frame(
+  District = c("Max", "Min"),
+  Litter = c(5, 0),
+  Graffiti = c(5, 0),
+  Air_Quality = c(5, 0),
+  Noise_Pollution = c(5, 0),
+  Green_Space_Cover = c(5, 0),
+  Presence_of_Art = c(5, 0),
+  Building_Design = c(5, 0),
+  Pathway_Maintenance = c(5, 0)
+)
+
+# Combine max-min values with actual data
+radar_data <- rbind(max_min, environmental_survey)
+
+# Rename column names to remove underscores
+colnames(radar_data) <- gsub("_", " ", colnames(radar_data))
+
+# Loop through each district and generate a radar chart
+for (i in 3:nrow(radar_data)) {
+  district_name <- radar_data$District[i]
+  
+  # Select only the row for the specific district (including min/max rows)
+  data_for_plot <- radar_data[c(1, 2, i), -1]  # Exclude the "District" column
+  
+  # Generate the radar plot
+  radarchart(data_for_plot,
+             axistype = 1,  # Show axis labels
+             pcol = "lightblue",  # Line color
+             pfcol = rgb(0, 0, 1, 0.3),  # Fill color (transparent blue)
+             plwd = 2,  # Line thickness
+             title = district_name
+  )
+}
+
+```
+
 The results of the environmental quality surveys show the variations in environmental quality across the different districts of Valencia. Districts with the highest level of environmental quality overall is Ciutat Vella which scores a maximum score of 4 in three different indicators including air quality, pathway maintenance, and budding design. This is because Ciuata Vella is the historical centre of Valencia and is therefore characterised by historic architecture and pedestrianized areas. The only indicator that lowers the environmental quality of Ciutat Vella is noise pollution which is relatively high up to 2.4 and can be attributed to high foot traffic owing to commercial and cultural land use of the district which can attract a lot of tourists and residents. With the second highest environmental quality comes Quatre Carreres which has a high score of 3 for green space cover and 3.8 for pathway maintenance which can be explained because Quatre Carreres has the largest section of the Turia Gardens, the largest urban park in Spain *(Lovell, L., 2025\)*. However the district has a relatively high level of air pollution and graffiti with a score of 2.4 and 2.2 respectively which contributes to an overall lower level of environmental quality. Conversely, Rascanya has the lowest environmental quality with a score of 0.0 for presence of art but a relatively high score of 2.7 for graffiti. The only indicator that contributes to increasing the environmental quality in Rascanay is the relatively high score of 2.4 for green space cover. Overall, the trend we can observe is that central districts like Ciutat Vella and El Pla del Real tend to score higher in aesthetic appeal and access to green space aspects of environmental quality but struggle with issues of cleanness and of pollution. On the other hand, more peripheral districts like Rascanya and Poblats Maritims tend to have lower environmental quality because of higher levels of graffiti and a lack of cultural elements but also display high levels of green space. This trend can be explained because central areas generally receive more investment in urban aesthetics and pedestrian infrastructure because of tourism and economic activity. 
+### **Spatial Analysis**   {#spatial-analysis}
+*Fig.17* shows spatial variations in environmental quality and livability. Looking at wider spatial patterns, we observe that the coastal area of Valencia has a low level of livability relative to inland areas of the city, particularly in terms of accessibility and economic vitality. For example, Poblats Maritims which extended on the coast of the mediterranean sea display low levels of accessibility and economic vitality down to 0.00 and 0.08 respectively. However, the coastal area also demonstrates a medium-to-high level of environmental quality up to 0.49 caused by the higher levels of tourism-driven conservation efforts which leads to high pathway maintenance (score of 3.4 on the environmental survey). Meanwhile, inland districts like Ciutat Vella display both high levels of livability and high environmental quality and this can be explained by the environmental Kuznets curve. Ciutat Vella has a high level of economic vitality of 0.89 which has caused residents of the district to advocate for greater investment in environmental protection and urban planning, hence increasing environmental quality over time. Many projects have been put in place in Ciutat Vella to improve the environmental quality like the restoration of the Plaza del Ayuntamiento and the creation of pedestrian-only zones that improve air quality and reduce noise pollution (Valencia.es., 2025).
+
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+ggplot(valenciamap_long) +
+  geom_sf(aes(fill = Value), color = "black", size = 0.2) +  # Map with district outlines
+  scale_fill_viridis_c(option = "magma", name = "Indicator Value") +  # Color scale
+  facet_wrap(~Indicator) +  # Create separate maps for each variable
+  theme_void() +
+  annotation_scale(location = "br", width_hint = 0.3) 
+```
+
 
 ## **Conclusion and Evaluation** {#conclusion-and-evaluation}
 
 1. ### **Conclusion**   {#conclusion}
 
-To conclude this investigation, a final graph encompassing all the variables explored was generated as a bubble chart shown on *Fig.17* which is useful to make compasion when a lot of inductors are used. Livability and environmental quality was calculated as a single inductor by normalizing their respective components and aggregating them into composite scores.        
+To conclude this investigation, a final graph encompassing all the variables explored was generated as a bubble chart shown on *Fig.17* which is useful to make comparison when a lot of indicators are used. Livability and environmental quality was calculated as a single indicators by normalizing their respective components and aggregating them into composite scores.    
+
+```{r echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+ggplot(final3_data, aes(x = environmental_quality, y = livability, size = income, color = district)) +
+  geom_point(alpha = 0.7) +  # Bubbles with transparency
+  scale_size(range = c(10, 40)) +  # **Increased Bubble Size**
+  labs(title = "Fig. 17 Livability vs Environmental Quality",
+       x = "Environmental Quality",
+       y = "Livability",
+       size = "Income",
+       color = "District") +
+  theme_minimal() +  # Clean theme
+  theme(
+    axis.title.x = element_text(size = 14, face = "bold"),  # **Larger X-axis text**
+    axis.title.y = element_text(size = 14, face = "bold"),  # **Larger Y-axis text**
+    legend.text = element_text(size = 18),  # **Bigger Legend Text**
+    legend.title = element_text(size = 14, face = "bold")  # **Bigger Legend Title**
+  )
+
+```
+
 
 **Hypothesis 1- With higher income brackets, indicators of livability generally increase, except for affordability and potentially diversity.**  
 *Fig.17* shows that the districts with the highest income level, shown by the largest bubble size, are also the districts with the highest level of livability, particularly Ciutat Vella which has a livability score of 0.94. The trends follow for districts from lower income brackets which have the lowest livability score of 0.21 for both Quatre Carreres and Poblats Maritims. Overall, data support the hypothesis that with higher income comes a higher level of livability. The only anomaly is that higher income districts also show higher affordability.    
